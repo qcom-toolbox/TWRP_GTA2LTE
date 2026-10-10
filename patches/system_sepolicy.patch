@@ -1,0 +1,30 @@
+diff --git a/build/Android.bp b/build/Android.bp
+index d3f1fc36..41c07b62 100644
+--- a/build/Android.bp
++++ b/build/Android.bp
+@@ -25,10 +25,10 @@ python_binary_host {
+   ],
+   version: {
+     py2: {
+-      enabled: true,
++      enabled: false,
+     },
+     py3: {
+-      enabled: false,
++      enabled: true,
+     },
+   },
+ }
+diff --git a/build/file_utils.py b/build/file_utils.py
+index 1559a9b9..fdb86e95 100644
+--- a/build/file_utils.py
++++ b/build/file_utils.py
+@@ -39,7 +39,7 @@ def filter_out(pattern_files, input_file):
+         patterns.extend(open(f).readlines())
+ 
+     # Copy lines that are not in the pattern.
+-    tmp_output = tempfile.NamedTemporaryFile()
++    tmp_output = tempfile.NamedTemporaryFile(mode='w')
+     with open(input_file, 'r') as in_file:
+         tmp_output.writelines(line for line in in_file.readlines()
+                               if line not in patterns)

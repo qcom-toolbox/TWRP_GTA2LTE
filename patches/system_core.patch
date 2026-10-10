@@ -1,0 +1,16 @@
+diff --git a/adb/daemon/usb.cpp b/adb/daemon/usb.cpp
+index 7869324..ddfe994 100644
+--- a/adb/daemon/usb.cpp
++++ b/adb/daemon/usb.cpp
+@@ -275,7 +275,10 @@ bool init_functionfs(struct usb_handle* h) {
+             goto err;
+         }
+ 
+-        ret = adb_write(h->control, &v2_descriptor, sizeof(v2_descriptor));
++        // gtactive2lte: this device's 3.18 kernel rejects the v2 descriptor
++        // block and functionfs is then unusable for the v1 retry, so write
++        // v1 descriptors directly.
++        ret = -1;
+         if (ret < 0) {
+             v1_descriptor.header.magic = cpu_to_le32(FUNCTIONFS_DESCRIPTORS_MAGIC);
+             v1_descriptor.header.length = cpu_to_le32(sizeof(v1_descriptor));

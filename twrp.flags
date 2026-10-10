@@ -1,0 +1,20 @@
+# NOTE: this file is documentation only — it is not read by the AOSP/TWRP
+# build system. There is no standard "twrp.flags" makefile input; TWRP build
+# flags (TW_*) must live in BoardConfig.mk, where they've actually been set
+# for this device. This file just mirrors those settings for quick reference.
+#
+# See BoardConfig.mk for the authoritative, build-effective values.
+
+TW_INTERNAL_STORAGE_PATH="/data/media"
+TW_INTERNAL_STORAGE_MOUNT_POINT="data"
+TW_EXTERNAL_STORAGE_PATH="/external_sd"
+TW_EXTERNAL_STORAGE_MOUNT_POINT="external_sd"
+TW_FLASH_FROM_STORAGE=true
+TW_INCLUDE_CRYPTO=true
+TW_INCLUDE_FBE=true
+TW_INCLUDE_FBE_METADATA_DECRYPT=true
+TW_NO_SCREEN_BLANK=true
+TW_NO_SCREEN_TIMEOUT=true
+TW_THEME=portrait_hdpi
+TW_INPUT_BLACKLIST="hall_sensor_input"
+TW_EXCLUDE_TWRPAPP=true

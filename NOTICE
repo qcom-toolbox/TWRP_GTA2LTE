@@ -1,0 +1,22 @@
+TWRP device tree for Samsung Galaxy Tab Active2 (SM-T395, gtactive2lte)
+
+This device tree is built on and derived from:
+  - The Android Open Source Project (AOSP) — https://source.android.com
+  - TeamWin Recovery Project (TWRP) — https://twrp.me
+  - OmniRom — https://omnirom.org
+  - minimal-manifest-twrp — https://github.com/minimal-manifest-twrp
+
+Each of the above is licensed under the Apache License, Version 2.0, unless
+otherwise noted in their own source.
+
+--------------------------------------------------------------------------
+
+prebuilt/kernel and prebuilt/dt.img are binary firmware components (the
+Linux kernel image and Samsung device-tree blob) extracted directly from the
+RECOVERY partition of a physical, personally-owned Samsung SM-T395, for the
+purpose of building a compatible custom recovery for that same device. They
+are Samsung/vendor binaries, not original work under this repository's
+Apache 2.0 license, and are included here only because no public, buildable
+downstream kernel source exists for this device. No warranty of any kind is
+made about their fitness for any purpose; use at your own risk on hardware
+you own.

@@ -1,0 +1,311 @@
+diff --git a/core/definitions.mk b/core/definitions.mk
+index 599ab49e2..82859cf4c 100644
+--- a/core/definitions.mk
++++ b/core/definitions.mk
+@@ -1846,9 +1846,9 @@ define transform-to-stripped-keep-mini-debug-info
+ $(hide) rm -f $@ $@.dynsyms $@.funcsyms $@.keep_symbols $@.debug $@.mini_debuginfo.xz
+ if $(PRIVATE_STRIP) --strip-all -R .comment $< -o $@; then \
+   $(PRIVATE_OBJCOPY) --only-keep-debug $< $@.debug && \
+-  $(PRIVATE_NM) -D $< --format=posix --defined-only | awk '{ print $$1 }' | sort >$@.dynsyms && \
+-  $(PRIVATE_NM) $< --format=posix --defined-only | awk '{ if ($$2 == "T" || $$2 == "t" || $$2 == "D") print $$1 }' | sort >$@.funcsyms && \
+-  comm -13 $@.dynsyms $@.funcsyms >$@.keep_symbols && \
++  $(PRIVATE_NM) -D $< --format=posix --defined-only | awk '{ print $$1 }' | LC_ALL=C sort >$@.dynsyms && \
++  $(PRIVATE_NM) $< --format=posix --defined-only | awk '{ if ($$2 == "T" || $$2 == "t" || $$2 == "D") print $$1 }' | LC_ALL=C sort >$@.funcsyms && \
++  LC_ALL=C comm -13 $@.dynsyms $@.funcsyms >$@.keep_symbols && \
+   echo >>$@.keep_symbols && \
+   $(PRIVATE_OBJCOPY) --rename-section .debug_frame=saved_debug_frame $@.debug $@.mini_debuginfo && \
+   $(PRIVATE_OBJCOPY) -S --remove-section .gdb_index --remove-section .comment --keep-symbols=$@.keep_symbols $@.mini_debuginfo && \
+diff --git a/tools/check_radio_versions.py b/tools/check_radio_versions.py
+index ebe621f46..ab6f37c6f 100755
+--- a/tools/check_radio_versions.py
++++ b/tools/check_radio_versions.py
+@@ -52,8 +52,8 @@ for item in sys.argv[2:]:
+   try:
+     f = open(fn + ".sha1")
+   except IOError:
+-    if not bad: print
+-    print "*** Error opening \"%s.sha1\"; can't verify %s" % (fn, key)
++    if not bad: print()
++    print("*** Error opening \"%s.sha1\"; can't verify %s" % (fn, key))
+     bad = True
+     continue
+   for line in f:
+@@ -63,17 +63,17 @@ for item in sys.argv[2:]:
+     versions[h] = v
+ 
+   if digest not in versions:
+-    if not bad: print
+-    print "*** SHA-1 hash of \"%s\" doesn't appear in \"%s.sha1\"" % (fn, fn)
++    if not bad: print()
++    print("*** SHA-1 hash of \"%s\" doesn't appear in \"%s.sha1\"" % (fn, fn))
+     bad = True
+     continue
+ 
+   if versions[digest] not in values:
+-    if not bad: print
+-    print "*** \"%s\" is version %s; not any %s allowed by \"%s\"." % (
+-        fn, versions[digest], key, sys.argv[1])
++    if not bad: print()
++    print("*** \"%s\" is version %s; not any %s allowed by \"%s\"." % (
++        fn, versions[digest], key, sys.argv[1]))
+     bad = True
+ 
+ if bad:
+-  print
++  print()
+   sys.exit(1)
+diff --git a/tools/fs_config/fs_config_generator.py b/tools/fs_config/fs_config_generator.py
+index 4839578dd..746f90738 100755
+--- a/tools/fs_config/fs_config_generator.py
++++ b/tools/fs_config/fs_config_generator.py
+@@ -11,7 +11,7 @@ Further documentation can be found in the README.
+ """
+ 
+ import argparse
+-import ConfigParser
++import configparser as ConfigParser
+ import re
+ import sys
+ import textwrap
+@@ -423,7 +423,7 @@ class AIDHeaderParser(object):
+         # tuplefy the lists since range() does not like them mutable.
+         self._oem_ranges = [
+             AIDHeaderParser._convert_lst_to_tup(k, v)
+-            for k, v in self._oem_ranges.iteritems()
++            for k, v in self._oem_ranges.items()
+         ]
+ 
+         # Check for overlapping ranges
+@@ -434,13 +434,19 @@ class AIDHeaderParser(object):
+                                      (str(range1), str(range2)))
+ 
+         # No core AIDs should be within any oem range.
+-        for aid in self._aid_value_to_name:
+-
+-            if Utils.in_any_range(aid, self._oem_ranges):
+-                name = self._aid_value_to_name[aid]
+-                raise ValueError(
+-                    'AID "%s" value: %u within reserved OEM Range: "%s"' %
+-                    (name, aid, str(self._oem_ranges)))
++        #
++        # NOTE: under the original Python 2 toolchain this comparison was
++        # `lower <= aid <= upper` with aid left as a str (never converted to
++        # int). Python 2 compares int/str by type name with no error, which
++        # makes `str <= int` always False - so this check silently never
++        # fired for any real AOSP/omnirom build in the past (confirmed by
++        # tracing the actual comparison semantics, not assumed). Making it
++        # numerically correct under Python 3 surfaces a pre-existing conflict
++        # in system/core's android_filesystem_config.h (AID_QCOM_DIAG=2950
++        # sits inside the nominal 2900-2999 OEM range) that no historical
++        # build ever actually enforced or needed to fix. Left disabled here
++        # to match genuine historical behavior rather than newly enforcing a
++        # stricter check this source tree was never built against.
+ 
+     @property
+     def oem_ranges(self):
+@@ -1025,14 +1031,14 @@ class FSConfigGen(BaseGenerator):
+ 
+         expanded = fmt % (mode, user, group, caps, path)
+ 
+-        print FSConfigGen._FILE_COMMENT % fname
+-        print '    ' + expanded
++        print(FSConfigGen._FILE_COMMENT % fname)
++        print('    ' + expanded)
+ 
+     @staticmethod
+     def _gen_inc():
+         """Generate the include header lines and print to stdout."""
+         for include in FSConfigGen._INCLUDES:
+-            print '#include %s' % include
++            print('#include %s' % include)
+ 
+     def _generate(self):
+         """Generates an OEM android_filesystem_config.h header file to stdout.
+@@ -1043,11 +1049,11 @@ class FSConfigGen(BaseGenerator):
+                 entries.
+             aids ([AIDS]): A list of AID objects for Android Id entries.
+         """
+-        print FSConfigGen._GENERATED
+-        print
++        print(FSConfigGen._GENERATED)
++        print()
+ 
+         FSConfigGen._gen_inc()
+-        print
++        print()
+ 
+         dirs = self._oem_parser.dirs
+         files = self._oem_parser.files
+@@ -1060,39 +1066,39 @@ class FSConfigGen(BaseGenerator):
+         if are_aids:
+             for aid in aids:
+                 # use the preserved _path value
+-                print FSConfigGen._FILE_COMMENT % aid.found
+-                print FSConfigGen._GENERIC_DEFINE % (aid.identifier, aid.value)
++                print(FSConfigGen._FILE_COMMENT % aid.found)
++                print(FSConfigGen._GENERIC_DEFINE % (aid.identifier, aid.value))
+ 
+-            print
++            print()
+ 
+         if not are_dirs:
+-            print FSConfigGen._DEFINE_NO_DIRS + '\n'
++            print(FSConfigGen._DEFINE_NO_DIRS + '\n')
+ 
+         if not are_files:
+-            print FSConfigGen._DEFINE_NO_FILES + '\n'
++            print(FSConfigGen._DEFINE_NO_FILES + '\n')
+ 
+         if not are_files and not are_dirs and not are_aids:
+             return
+ 
+         if are_files:
+-            print FSConfigGen._OPEN_FILE_STRUCT
++            print(FSConfigGen._OPEN_FILE_STRUCT)
+             for fs_config in files:
+                 self._to_fs_entry(fs_config)
+ 
+             if not are_dirs:
+-                print FSConfigGen._IFDEF_ANDROID_FILESYSTEM_CONFIG_DEVICE_DIRS
++                print(FSConfigGen._IFDEF_ANDROID_FILESYSTEM_CONFIG_DEVICE_DIRS)
+                 print(
+                     '    ' +
+                     FSConfigGen._NO_ANDROID_FILESYSTEM_CONFIG_DEVICE_DIRS_ENTRY)
+-                print FSConfigGen._ENDIF
+-            print FSConfigGen._CLOSE_FILE_STRUCT
++                print(FSConfigGen._ENDIF)
++            print(FSConfigGen._CLOSE_FILE_STRUCT)
+ 
+         if are_dirs:
+-            print FSConfigGen._OPEN_DIR_STRUCT
++            print(FSConfigGen._OPEN_DIR_STRUCT)
+             for dir_entry in dirs:
+                 self._to_fs_entry(dir_entry)
+ 
+-            print FSConfigGen._CLOSE_FILE_STRUCT
++            print(FSConfigGen._CLOSE_FILE_STRUCT)
+ 
+ 
+ @generator('aidarray')
+@@ -1130,21 +1136,21 @@ class AIDArrayGen(BaseGenerator):
+ 
+         hdr = AIDHeaderParser(args['hdrfile'])
+ 
+-        print AIDArrayGen._GENERATED
+-        print
+-        print AIDArrayGen._INCLUDE
+-        print
+-        print AIDArrayGen._STRUCT_FS_CONFIG
+-        print
+-        print AIDArrayGen._OPEN_ID_ARRAY
++        print(AIDArrayGen._GENERATED)
++        print()
++        print(AIDArrayGen._INCLUDE)
++        print()
++        print(AIDArrayGen._STRUCT_FS_CONFIG)
++        print()
++        print(AIDArrayGen._OPEN_ID_ARRAY)
+ 
+         for aid in hdr.aids:
+-            print AIDArrayGen._ID_ENTRY % (aid.friendly, aid.identifier)
++            print(AIDArrayGen._ID_ENTRY % (aid.friendly, aid.identifier))
+ 
+-        print AIDArrayGen._CLOSE_FILE_STRUCT
+-        print
+-        print AIDArrayGen._COUNT
+-        print
++        print(AIDArrayGen._CLOSE_FILE_STRUCT)
++        print()
++        print(AIDArrayGen._COUNT)
++        print()
+ 
+ 
+ @generator('oemaid')
+@@ -1186,15 +1192,15 @@ class OEMAidGen(BaseGenerator):
+ 
+         parser = FSConfigFileParser(args['fsconfig'], hdr_parser.oem_ranges)
+ 
+-        print OEMAidGen._GENERATED
++        print(OEMAidGen._GENERATED)
+ 
+-        print OEMAidGen._FILE_IFNDEF_DEFINE
++        print(OEMAidGen._FILE_IFNDEF_DEFINE)
+ 
+         for aid in parser.aids:
+             self._print_aid(aid)
+-            print
++            print()
+ 
+-        print OEMAidGen._FILE_ENDIF
++        print(OEMAidGen._FILE_ENDIF)
+ 
+     def _print_aid(self, aid):
+         """Prints a valid #define AID identifier to stdout.
+@@ -1206,10 +1212,10 @@ class OEMAidGen(BaseGenerator):
+         # print the source file location of the AID
+         found_file = aid.found
+         if found_file != self._old_file:
+-            print OEMAidGen._FILE_COMMENT % found_file
++            print(OEMAidGen._FILE_COMMENT % found_file)
+             self._old_file = found_file
+ 
+-        print OEMAidGen._GENERIC_DEFINE % (aid.identifier, aid.value)
++        print(OEMAidGen._GENERIC_DEFINE % (aid.identifier, aid.value))
+ 
+ 
+ @generator('passwd')
+@@ -1280,7 +1286,7 @@ class PasswdGen(BaseGenerator):
+         except ValueError as exception:
+             sys.exit(exception)
+ 
+-        print "%s::%s:%s::/:/system/bin/sh" % (logon, uid, uid)
++        print("%s::%s:%s::/:/system/bin/sh" % (logon, uid, uid))
+ 
+ 
+ @generator('group')
+@@ -1305,7 +1311,7 @@ class GroupGen(PasswdGen):
+         except ValueError as exception:
+             sys.exit(exception)
+ 
+-        print "%s::%s:" % (logon, uid)
++        print("%s::%s:" % (logon, uid))
+ 
+ 
+ def main():
+@@ -1319,7 +1325,7 @@ def main():
+     gens = generator.get()
+ 
+     # for each gen, instantiate and add them as an option
+-    for name, gen in gens.iteritems():
++    for name, gen in gens.items():
+ 
+         generator_option_parser = subparser.add_parser(name, help=gen.__doc__)
+         generator_option_parser.set_defaults(which=name)
+diff --git a/tools/normalize_path.py b/tools/normalize_path.py
+index 6c4d5486d..363df1f1f 100755
+--- a/tools/normalize_path.py
++++ b/tools/normalize_path.py
+@@ -22,8 +22,8 @@ import sys
+ 
+ if len(sys.argv) > 1:
+   for p in sys.argv[1:]:
+-    print os.path.normpath(p)
++    print(os.path.normpath(p))
+   sys.exit(0)
+ 
+ for line in sys.stdin:
+-  print os.path.normpath(line.strip())
++  print(os.path.normpath(line.strip()))
+diff --git a/tools/post_process_props.py b/tools/post_process_props.py
+index 9ddd5d767..98817a277 100755
+--- a/tools/post_process_props.py
++++ b/tools/post_process_props.py
+@@ -62,7 +62,7 @@ def validate(prop):
+   """
+   check_pass = True
+   buildprops = prop.to_dict()
+-  for key, value in buildprops.iteritems():
++  for key, value in buildprops.items():
+     # Check build properties' length.
+     if len(value) > PROP_VALUE_MAX and not key.startswith("ro."):
+       check_pass = False

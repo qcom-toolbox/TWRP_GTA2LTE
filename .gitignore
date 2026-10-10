@@ -1,0 +1,45 @@
+# ==========================================
+# TWRP Device Tree Gitignore
+# ==========================================
+
+# --- Android Build Artifacts ---
+/out/
+*.zip
+*.tar
+*.tar.gz
+
+# Ignore stray/built images anywhere in the tree, but the prebuilt kernel and
+# device-tree blob in prebuilt/ are intentionally committed (this device has
+# no buildable downstream kernel source - see README) and must not match
+# these rules.
+*.img
+!prebuilt/*.img
+*.gz
+!prebuilt/*.gz
+
+# --- Tooling & Repo Manifests ---
+/.repo/
+/build/
+
+# --- Kernel Compilation Artifacts ---
+# Only relevant if building inline kernel within the device tree
+*.o
+*.ko
+*.mod.c
+*.order
+*.builtin
+/modules.builtin
+/modules.order
+.tmp_versions/
+
+# --- IDEs & Text Editors ---
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*~
+
+# --- OS Generated Files ---
+.DS_Store
+Thumbs.db
