@@ -1,0 +1,17 @@
+diff --git a/tools/Android.bp b/tools/Android.bp
+index a7ed9bc0b0..b322702c3c 100644
+--- a/tools/Android.bp
++++ b/tools/Android.bp
+@@ -21,10 +21,10 @@ python_binary_host {
+   ],
+   version: {
+     py2: {
+-      enabled: true,
++      enabled: false,
+     },
+     py3: {
+-      enabled: false,
++      enabled: true,
+     },
+   },
+ }

@@ -1,0 +1,77 @@
+diff --git a/minuitwrp/graphics_fbdev.cpp b/minuitwrp/graphics_fbdev.cpp
+index fc5fcf38..0ff12992 100644
+--- a/minuitwrp/graphics_fbdev.cpp
++++ b/minuitwrp/graphics_fbdev.cpp
+@@ -19,6 +19,7 @@
+ #include <string.h>
+ #include <unistd.h>
+ 
++#include <errno.h>
+ #include <fcntl.h>
+ #include <stdio.h>
+ 
+@@ -188,14 +189,28 @@ static GRSurface* fbdev_init(minui_backend* backend) {
+            vi.green.offset, vi.green.length,
+            vi.blue.offset, vi.blue.length);
+ 
+-    void* bits = mmap(0, fi.smem_len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
++    // On this device, FBIOGET_FSCREENINFO's smem_len does not match what the
++    // driver will actually let us mmap (confirmed by testing directly on
++    // hardware: mmap(fi.smem_len) fails with EINVAL even after forcing a
++    // correct RGB565 vi above). Fall back to the exact size of a single
++    // frame (real, computed from the now-correct line_length/yres) rather
++    // than trusting the driver's over/under-reported smem_len.
++    size_t map_len = fi.smem_len;
++    void* bits = mmap(0, map_len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
++    if (bits == MAP_FAILED) {
++        size_t single_frame_len = (size_t)vi.yres * fi.line_length;
++        printf("mmap of fi.smem_len=%u failed (%s), retrying with single-frame size %zu\n",
++               fi.smem_len, strerror(errno), single_frame_len);
++        map_len = single_frame_len;
++        bits = mmap(0, map_len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
++    }
+     if (bits == MAP_FAILED) {
+         perror("failed to mmap framebuffer");
+         close(fd);
+         return NULL;
+     }
+ 
+-    memset(bits, 0, fi.smem_len);
++    memset(bits, 0, map_len);
+ 
+     gr_framebuffer[0].width = vi.xres;
+     gr_framebuffer[0].height = vi.yres;
+@@ -235,7 +250,7 @@ static GRSurface* fbdev_init(minui_backend* backend) {
+     if (!gr_draw) {
+         perror("failed to allocate gr_draw");
+         close(fd);
+-        munmap(bits, fi.smem_len);
++        munmap(bits, map_len);
+         return NULL;
+     }
+     memcpy(gr_draw, gr_framebuffer, sizeof(GRSurface));
+@@ -244,13 +259,13 @@ static GRSurface* fbdev_init(minui_backend* backend) {
+         perror("failed to allocate in-memory surface");
+         close(fd);
+         free(gr_draw);
+-        munmap(bits, fi.smem_len);
++        munmap(bits, map_len);
+         return NULL;
+     }
+ 
+     /* check if we can use double buffering */
+ #ifndef RECOVERY_GRAPHICS_FORCE_SINGLE_BUFFER
+-    if (vi.yres * fi.line_length * 2 <= fi.smem_len) {
++    if ((size_t)vi.yres * fi.line_length * 2 <= map_len) {
+         double_buffered = true;
+         printf("double buffered\n");
+ 
+@@ -277,7 +292,7 @@ static GRSurface* fbdev_init(minui_backend* backend) {
+     fbdev_blank(backend, true);
+     fbdev_blank(backend, false);
+ 
+-    smem_len = fi.smem_len;
++    smem_len = map_len;
+ 
+     return gr_draw;
+ }

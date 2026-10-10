@@ -1,0 +1,29 @@
+# recovery.fstab for Samsung Galaxy Tab Active2 (SM-T395 / gtactive2lte)
+#
+# All block-device paths and partition roles below were read directly from
+# the physical device (adb root shell):
+#   ls -la /dev/block/platform/*/by-name/     -> by-name symlink targets
+#   cat /proc/partitions                      -> partition sizes
+#   cat /fstab.samsungexynos7870               -> stock Android fstab (source
+#                                                for the vold/sdcard/usb lines)
+# Controller path is /dev/block/platform/13540000.dwmmc0 (internal eMMC).
+#
+# <mount_point>   <fstype>   <blockdevice>                                                     <flags>
+
+/boot             emmc       /dev/block/platform/13540000.dwmmc0/by-name/BOOT
+/recovery         emmc       /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY
+/system           ext4       /dev/block/platform/13540000.dwmmc0/by-name/SYSTEM
+/cache            ext4       /dev/block/platform/13540000.dwmmc0/by-name/CACHE               flags=display="Cache";wipeingui
+/data             ext4       /dev/block/platform/13540000.dwmmc0/by-name/USERDATA            flags=display="Data";wipeingui;length=-16384
+/efs              ext4       /dev/block/platform/13540000.dwmmc0/by-name/EFS                 flags=backup=1;wipeingui;display="EFS"
+/cpefs            ext4       /dev/block/platform/13540000.dwmmc0/by-name/CPEFS               flags=backup=1;wipeingui
+/modem            emmc       /dev/block/platform/13540000.dwmmc0/by-name/RADIO               flags=backup=1;flashimg=1;display="Modem"
+/param            emmc       /dev/block/platform/13540000.dwmmc0/by-name/PARAM               flags=backup=1
+/preload          ext4       /dev/block/platform/13540000.dwmmc0/by-name/HIDDEN              flags=display="Preload";wipeingui
+
+# microSD (dwmmc2 controller) — matches the voldmanaged=sdcard:auto line in
+# the stock /fstab.samsungexynos7870
+/external_sd      vfat       /devices/13560000.dwmmc2/mmc_host/mmc*                          flags=display="MicroSD";storage;wipeingui;removable
+
+# USB OTG — matches the voldmanaged=usb:auto line in the stock fstab
+/usb-otg          vfat       /devices/13600000.usb/13600000.dwc3/xhci-hcd.2.auto/usb*         flags=display="USB OTG";storage;wipeingui;removable
